@@ -1,0 +1,8 @@
+# Ignore object file
+*.o
+
+# Ignore vscode settings
+.vscode/
+
+# Ignore os specific files
+ossim_sierra/ossim_sierra/os
