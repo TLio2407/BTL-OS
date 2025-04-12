@@ -160,9 +160,29 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 
 int MEMPHY_dump(struct memphy_struct *mp)
 {
-  /*TODO dump memphy contnt mp->storage
-   *     for tracing the memory content
-   */
+   /*TODO dump memphy contnt mp->storage
+    *     for tracing the memory content
+    */
+   int count = -1;
+   for (int i = 0; i < mp->maxsz; i++)
+   {
+      if (mp->storage[i] != 0)
+      {
+         if (count == -1)
+         {
+            count = 1;
+            printf("%d", mp->storage[i]);
+         }
+         if (count == 8)
+         {
+            printf("\n");
+            count = 1;
+         }
+         count++;
+      }
+   }
+   if (count == -1)
+      printf("No data in memphy\n");
    return 0;
 }
 
