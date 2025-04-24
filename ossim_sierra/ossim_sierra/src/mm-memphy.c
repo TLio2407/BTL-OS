@@ -160,29 +160,19 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 
 int MEMPHY_dump(struct memphy_struct *mp)
 {
-   /*TODO dump memphy contnt mp->storage
-    *     for tracing the memory content
-    */
-   int count = -1;
+   if (mp == NULL)
+   {
+      printf("MEMPHY is not initialized\n");
+      return -1;
+   }
+   printf("===== PHYSICAL MEMORY DUMP =====\n");
    for (int i = 0; i < mp->maxsz; i++)
    {
-      if (mp->storage[i] != 0)
-      {
-         if (count == -1)
-         {
-            count = 1;
-            printf("%d", mp->storage[i]);
-         }
-         if (count == 8)
-         {
-            printf("\n");
-            count = 1;
-         }
-         count++;
-      }
+      if (mp->storage[i] == 0)
+         continue;
+      printf("BYTE %08x: %d\n", i, mp->storage[i]);
    }
-   if (count == -1)
-      printf("No data in memphy\n");
+   printf("===== PHYSICAL MEMORY END-DUMP =====\n");
    return 0;
 }
 
