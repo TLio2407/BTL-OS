@@ -52,15 +52,38 @@ int __mm_swap_page(struct pcb_t *caller, int vicfpn , int swpfpn)
  */
 struct vm_rg_struct *get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, int size, int alignedsz)
 {
-  struct vm_rg_struct * newrg;
+  struct vm_rg_struct * newrg = malloc(sizeof(struct vm_rg_struct));
+  if (!newrg)
+    return NULL;
   // TODO: retrieve current vma to obtain newrg, current comment out due to compiler redundant warning
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   if (!cur_vma)
     return NULL;
-  //? Allocate memory for the new region
-  newrg = malloc(sizeof(struct vm_rg_struct));
-  if (!newrg)
-    return NULL;
+  //! 1st way: Try to reuse free slots
+  struct vm_rg_struct *free_rg = cur_vma->vm_freerg_list;
+  struct vm_rg_struct *prev_rg = NULL;
+  while (free_rg){
+    if (free_rg->rg_end - free_rg->rg_start >= alignedsz) {
+      // Found a suitable free slot
+      newrg->rg_start = free_rg->rg_start;
+      newrg->rg_end = free_rg->rg_start + alignedsz;
+
+      // Update the free slot (split the remaining space)
+      if (free_rg->rg_end > newrg->rg_end)
+          free_rg->rg_start = newrg->rg_end;
+      else{
+          // Remove the free slot if fully consumed
+          if (prev_rg)
+            prev_rg->rg_next = free_rg->rg_next;
+          else cur_vma->vm_freerg_list = free_rg->rg_next;
+          free(free_rg);
+      }
+      return newrg;
+    }
+    prev_rg = free_rg;
+    free_rg = free_rg->rg_next;
+  }
+  //! 2nd way: Extend sbrk when no free slots are found
   // TODO: update the newrg boundary
   newrg->rg_start = cur_vma->sbrk;    // Start at this break
   newrg->rg_end = newrg->rg_start + alignedsz;  // End after aligned size
@@ -81,7 +104,9 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int 
   struct vm_area_struct *vma = caller->mm->mmap;
   while (vma){
     if (vma->vm_id != vmaid)
-      if (OVERLAP(vmastart, vmaend, vma->vm_start, vma->vm_end))
+    // Memory area [start, end)
+    // [A1, A2) and [B1, B2) overlap if A1 < B2 && A2 > B1
+      if (vmastart < vma->vm_end && vmaend > vma->vm_start)
         return -1;    // Overlap occurs
     vma = vma->vm_next; // Goto the next vm area
   }
