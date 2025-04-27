@@ -169,8 +169,26 @@ int liballoc(struct pcb_t *proc, uint32_t size, uint32_t reg_index)
   if (__alloc(proc, 0, reg_index, size, &addr) == 0)
   {
     proc->regs[reg_index] = addr;
+    #ifdef IODUMP
+    printf("===== PHYSICAL MEMORY AFTER ALLOCATION =====\n");
+    printf("PID=%d - Region=%d - Address=%d - Size=%d byte\n", proc->pid, reg_index, addr, size);
+#ifdef PAGETBL_DUMP
+    print_pgtbl(proc, 0, -1);
+#endif
+    //MEMPHY_dump(proc->mram);
+    printf("====================================================================\n");
+#endif
     return 0;
   }
+  #ifdef IODUMP
+    printf("===== PHYSICAL MEMORY AFTER ALLOCATION =====\n");
+    printf("PID=%d - Region=%d - Address=%d - Size=%d byte\n", proc->pid, reg_index, addr, size);
+#ifdef PAGETBL_DUMP
+    print_pgtbl(proc, 0, -1);
+#endif
+    //MEMPHY_dump(proc->mram);
+    printf("====================================================================\n");
+#endif
   return -1;
 }
 
@@ -179,8 +197,28 @@ int libfree(struct pcb_t *proc, uint32_t reg_index)
   if (__free(proc, 0, reg_index) == 0)
   {
     proc->regs[reg_index] = 0;
+    
+#ifdef IODUMP
+printf("===== PHYSICAL MEMORY AFTER DEALLOCATION =====\n");
+printf("PID=%d - Region=%d\n", proc->pid, reg_index);
+#ifdef PAGETBL_DUMP
+print_pgtbl(proc, 0, -1);
+#endif
+//MEMPHY_dump(proc->mram);
+printf("====================================================================\n");
+#endif
     return 0;
   }
+  
+#ifdef IODUMP
+printf("===== PHYSICAL MEMORY AFTER DEALLOCATION =====\n");
+printf("PID=%d - Region=%d\n", proc->pid, reg_index);
+#ifdef PAGETBL_DUMP
+print_pgtbl(proc, 0, -1);
+#endif
+//MEMPHY_dump(proc->mram);
+printf("====================================================================\n");
+#endif
   return -1;
 }
 
@@ -300,6 +338,16 @@ int __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE val)
 
 int libwrite(struct pcb_t *proc, BYTE data, uint32_t destination, uint32_t offset)
 {
+  
+#ifdef IODUMP
+printf("===== PHYSICAL MEMORY AFTER WRITING =====\n");
+printf("write region=%d offset=%d value=%d\n", destination, offset, data);
+#ifdef PAGETBL_DUMP
+print_pgtbl(proc, 0, -1); //print max TBL
+#endif
+//MEMPHY_dump(proc->mram);
+printf("====================================================================\n");
+#endif
   return __write(proc, 0, destination, offset, data);
 }
 
